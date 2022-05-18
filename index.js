@@ -77,6 +77,23 @@ const run = async()=>{
                 res.status(403).send({message:"Forbidden Access!"});
             }
         });
+        //DELETE TASK
+        app.delete('/deleteTask/:id',async(req,res)=>{
+            try{
+                const id=req.params.id;
+            if(id){
+                const query = {_id:ObjectId(id)};
+                const result = await todos.deleteOne(query);
+                res.send(result);
+            }
+            else{
+                res.send({message:"something went wrong"});
+            }
+            }
+            catch{
+                res.send({message:"something went wrong"});
+            }
+        });
     }
     finally{
 
