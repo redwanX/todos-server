@@ -12,6 +12,24 @@ app.use(cors());
 app.use(express.json());
 
 
+
+//VerifyJWT
+const VerifyJWT = (req,res,next)=>{
+    email=req.query.email;
+    const authHeader = req.headers.authorization;
+    if(!authHeader || !email){
+        return res.status(401).send({message:'unauthorized access'});
+    }
+    const token= authHeader.split(' ')[1];
+    jwt.verify(token,process.env.JWT_SECRET,(err,decoded)=>{
+        if(err){
+            return res.status(403).send({message:"Forbidden Access"});
+        }
+        req.decoded = decoded;
+         next();
+    })
+}
+
 // Index
 app.get('/',(req,res)=>{
     res.send("server is running");
@@ -24,8 +42,41 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 const run = async()=>{
     try{
         await client.connect();
-        console.log("connected")
-      
+        const todos =client.db("todos").collection("todos")
+        //AUTH API
+        app.post('/login',async(req,res)=>{
+            const user = req.body;
+            const token = jwt.sign(user,process.env.JWT_SECRET,{
+                expiresIn:'1d'
+            });
+            res.send({token})
+        });
+        
+        //ADD TASK
+        app.post('/addtask',async(req,res)=>{
+                const result = await todos.insertOne(req.body)
+                res.send(result)
+        });
+
+        //GET ONLY TODOS WITH GIVEN EMAIL (JWT)
+        app.get('/todos',VerifyJWT,async(req,res)=>{
+            const decodedEmail=req?.decoded?.email;
+            const QueryEmail = req?.query?.email;
+            if(decodedEmail === QueryEmail){
+            if(QueryEmail){
+                const query={email:QueryEmail};
+                const cursor = todos.find(query);
+                const result= await cursor.toArray();
+                res.send(result);
+            }
+            else{
+                res.send([]);
+            }
+            }
+            else{
+                res.status(403).send({message:"Forbidden Access!"});
+            }
+        });
     }
     finally{
 
