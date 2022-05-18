@@ -94,6 +94,30 @@ const run = async()=>{
                 res.send({message:"something went wrong"});
             }
         });
+
+        //COMPLETE
+        app.put('/completeTask/:id',async(req,res)=>{
+            try{
+                const id=req.params.id;
+            if(id){
+                const filter = {_id:ObjectId(id)};
+                const options = { upsert: true };
+                const updateTask = {
+                    $set: {
+                        complete: true,
+                    },
+                };
+                const result = await todos.updateOne(filter, updateTask, options);
+                res.send(result);
+            }
+            else{
+                res.send({message:"something went wrong"});
+            }
+            }
+            catch{
+                res.send({message:"something went wrong"});
+            }
+        });
     }
     finally{
 
